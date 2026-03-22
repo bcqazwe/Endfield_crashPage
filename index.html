@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL - SYSTEM RECOVERY</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap');
+
+        :root {
+            --endfield-orange: #ff5f00;
+            --endfield-bg: #0a0a0a;
+            --endfield-gray: #1a1a1a;
+            --endfield-text-dim: #888888;
+        }
+
+        body {
+            background-color: var(--endfield-bg);
+            color: white;
+            font-family: 'JetBrains+Mono', 'Noto+Sans+TC', monospace;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 背景掃描線效果 */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .glitch-text {
+            position: relative;
+            display: inline-block;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .system-alert {
+            border-left: 4px solid var(--endfield-orange);
+            background: rgba(255, 95, 0, 0.1);
+            padding: 10px 20px;
+            margin-bottom: 2rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .countdown-container {
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--endfield-orange);
+            text-shadow: 0 0 20px rgba(255, 95, 0, 0.5);
+            letter-spacing: -2px;
+        }
+
+        .progress-bar {
+            width: 300px;
+            height: 4px;
+            background: var(--endfield-gray);
+            position: relative;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--endfield-orange);
+            width: 45%;
+            transition: width 1s linear;
+        }
+
+        .log-container {
+            position: absolute;
+            bottom: 5%;
+            left: 5%;
+            width: 30%;
+            height: 150px;
+            font-size: 0.75rem;
+            color: var(--endfield-text-dim);
+            overflow: hidden;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+
+        .corner-bracket {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--endfield-orange);
+            border-style: solid;
+        }
+
+        .top-left { top: 40px; left: 40px; border-width: 2px 0 0 2px; }
+        .top-right { top: 40px; right: 40px; border-width: 2px 2px 0 0; }
+        .bottom-left { bottom: 40px; left: 40px; border-width: 0 0 2px 2px; }
+        .bottom-right { bottom: 40px; right: 40px; border-width: 0 2px 2px 0; }
+
+        .brand-logo {
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            color: white;
+            opacity: 0.9;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: var(--endfield-orange);
+            color: black;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 裝飾邊框 -->
+    <div class="corner-bracket top-left"></div>
+    <div class="corner-bracket top-right"></div>
+    <div class="corner-bracket bottom-left"></div>
+    <div class="corner-bracket bottom-right"></div>
+
+    <!-- 主要內容 -->
+    <div class="text-center z-10">
+        <div class="brand-logo">ARKNIGHTS : ENDFIELD</div>
+        <h1 class="text-3xl font-bold mb-8">明日方舟：終末地</h1>
+        
+        <div class="system-alert">
+            <span class="status-badge">CRITICAL</span>
+            <span class="tracking-widest">系統連線異常 - 正在重新導向協定</span>
+        </div>
+
+        <div class="text-sm text-dim uppercase tracking-widest mb-2" style="color: var(--endfield-text-dim);">Estimated Recovery Time</div>
+        <div class="countdown-container" id="countdown">00:09:59</div>
+        
+        <div class="flex flex-col items-center mt-4">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="text-[10px] mt-2 tracking-tighter text-dim" id="progressText">SYNCING CORE DATA... 45.2%</div>
+        </div>
+    </div>
+
+    <!-- 側邊技術裝飾 -->
+    <div class="absolute right-[5%] top-[20%] text-right opacity-30 select-none">
+        <div class="text-xs mb-1">NODE_ID: EF-092-B</div>
+        <div class="text-xs mb-1">SECTOR: TALOS-II</div>
+        <div class="text-xs">PROTOCOL: 0x445F</div>
+    </div>
+
+    <!-- 技術日誌流 -->
+    <div class="log-container" id="logBox">
+        <!-- JS 會在此處生成日誌 -->
+    </div>
+
+    <!-- 底部資訊 -->
+    <div class="absolute bottom-10 right-10 text-[10px] text-zinc-600 tracking-widest">
+        SYSTEM RECOVERY MODULE v2.5.0-PROTOTYPE
+    </div>
+
+    <script>
+        // 倒計時邏輯 (設定 10 分鐘)
+        let totalSeconds = 600;
+        const countdownElement = document.getElementById('countdown');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        function updateCountdown() {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            countdownElement.textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${(Math.floor(Math.random() * 99)).toString().padStart(2, '0')}`;
+            
+            // 更新進度條
+            const percent = ((600 - totalSeconds) / 600) * 100;
+            progressFill.style.width = `${40 + (percent * 0.6)}%`;
+            progressText.textContent = `RECALIBRATING NEURAL LINK... ${(40 + (percent * 0.6)).toFixed(1)}%`;
+
+            if (totalSeconds > 0) {
+                totalSeconds--;
+            } else {
+                totalSeconds = 600; // 循環模擬
+            }
+        }
+
+        // 隨機日誌生成
+        const logBox = document.getElementById('logBox');
+        const logMessages = [
+            "Initializing connection to Talos-II central hub...",
+            "Checking local authority levels...",
+            "Warning: Anomaly detected in sector 04.",
+            "Syncing protocol 0x889A: SUCCESS.",
+            "Retrieving administrator privileges...",
+            "Encryption layer established.",
+            "Data fragment recovery: 88% complete.",
+            "Re-routing emergency power to core...",
+            "Awaiting response from Endfield Industries...",
+            "Connection failed. Retrying in 500ms...",
+            "Memory buffer cleared.",
+            "Sanity check: PASSED.",
+            "Babel system online."
+        ];
+
+        function addLog() {
+            const log = document.createElement('div');
+            log.className = 'mb-1';
+            const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            log.innerHTML = `<span style="color: #ff5f00;">[${timestamp}]</span> ${logMessages[Math.floor(Math.random() * logMessages.length)]}`;
+            logBox.appendChild(log);
+            
+            if (logBox.childNodes.length > 8) {
+                logBox.removeChild(logBox.firstChild);
+            }
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // 定時器
+        setInterval(updateCountdown, 100); // 為了呈現毫秒跳動感使用較快頻率
+        setInterval(addLog, 2000);
+
+        // 初始化
+        updateCountdown();
+        for(let i=0; i<5; i++) addLog();
+
+        // 隨機故障閃爍效果
+        setInterval(() => {
+            if (Math.random() > 0.95) {
+                document.body.style.opacity = "0.8";
+                setTimeout(() => document.body.style.opacity = "1", 50);
+            }
+        }, 500);
+    </script>
+</body>
+</html>
