@@ -13,7 +13,7 @@
             --endfield-bg: #0a0a0a;
             --endfield-gray: #1a1a1a;
             --endfield-text-dim: #888888;
-            --modal-bg: rgba(10, 10, 10, 0.95);
+            --modal-bg: rgba(5, 5, 5, 0.98);
         }
 
         body {
@@ -25,7 +25,7 @@
             margin: 0;
         }
 
-        /* 背景掃描線效果 */
+        /* 背景掃描線與干擾效果 */
         .scanline-overlay::before {
             content: " ";
             display: block;
@@ -34,12 +34,14 @@
             left: 0;
             bottom: 0;
             right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
             z-index: 50;
             background-size: 100% 2px, 3px 100%;
             pointer-events: none;
         }
 
+        /* 系統警示脈動 */
         .system-alert {
             border-left: 4px solid var(--endfield-orange);
             background: rgba(255, 95, 0, 0.1);
@@ -53,19 +55,22 @@
         }
 
         .countdown-container {
-            font-size: 5rem;
+            font-size: clamp(3rem, 10vw, 6rem);
             font-weight: 700;
             color: var(--endfield-orange);
-            text-shadow: 0 0 20px rgba(255, 95, 0, 0.5);
+            text-shadow: 0 0 30px rgba(255, 95, 0, 0.5);
             letter-spacing: -2px;
+            font-variant-numeric: tabular-nums;
         }
 
         .corner-bracket {
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-color: var(--endfield-orange);
             border-style: solid;
+            z-index: 60;
+            opacity: 0.8;
         }
 
         .top-left { top: 40px; left: 40px; border-width: 2px 0 0 2px; }
@@ -73,24 +78,25 @@
         .bottom-left { bottom: 40px; left: 40px; border-width: 0 0 2px 2px; }
         .bottom-right { bottom: 40px; right: 40px; border-width: 0 2px 2px 0; }
 
-        /* 按鈕樣式 */
+        /* 行動按鈕 */
         .action-btn {
             background: transparent;
             border: 1px solid var(--endfield-orange);
             color: var(--endfield-orange);
-            padding: 8px 24px;
-            font-size: 0.8rem;
-            letter-spacing: 2px;
-            transition: all 0.3s;
+            padding: 14px 40px;
+            font-size: 0.9rem;
+            letter-spacing: 4px;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
             cursor: pointer;
             position: relative;
-            overflow: hidden;
+            text-transform: uppercase;
         }
 
         .action-btn:hover {
             background: var(--endfield-orange);
             color: black;
-            box-shadow: 0 0 15px var(--endfield-orange);
+            box-shadow: 0 0 25px rgba(255, 95, 0, 0.7);
+            transform: translateY(-3px);
         }
 
         /* 檔案彈窗 */
@@ -103,46 +109,104 @@
             height: 100%;
             z-index: 100;
             background: var(--modal-bg);
-            backdrop-filter: blur(10px);
-            padding: 40px;
-            overflow-y: auto;
+            backdrop-filter: blur(20px);
+            opacity: 0;
+            transition: opacity 0.6s ease;
         }
 
-        .skill-node {
-            background: #1a1a1a;
-            border-left: 2px solid var(--endfield-orange);
-            padding: 10px;
-            margin-bottom: 10px;
+        #dataModal.active {
+            display: block;
+            opacity: 1;
         }
 
-        /* 角色圖片容器優化 */
+        .modal-container {
+            transform: scale(1.1) translateY(20px);
+            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        #dataModal.active .modal-container {
+            transform: scale(1) translateY(0);
+        }
+
+        /* 角色大圖展示區 */
         .char-image-container {
             position: relative;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
-            border: 1px solid #333;
+            background: radial-gradient(circle at 50% 40%, #1a1a1a 0%, #050505 100%);
+            border: 1px solid #222;
             overflow: hidden;
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
+            height: 100%;
+            min-height: 550px;
         }
 
         #charImage {
-            max-height: 90%;
-            max-width: 90%;
+            height: 115%; /* 放大至合適大小 */
+            width: auto;
+            max-width: none;
             object-fit: contain;
-            filter: drop-shadow(0 0 20px rgba(255, 95, 0, 0.2));
-            transition: opacity 0.5s ease;
+            filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.9));
+            opacity: 0;
+            transform: translateX(40px) scale(0.95);
+            transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+            pointer-events: none;
+        }
+
+        #charImage.visible {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+
+        /* 技能節點動畫 */
+        .skill-node {
+            background: #111;
+            border-left: 4px solid var(--endfield-orange);
+            padding: 14px 20px;
+            margin-bottom: 14px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .skill-node.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 切換瞬間的視覺干擾 */
+        .glitch-overlay {
+            position: absolute;
+            inset: 0;
+            background: white;
+            opacity: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        @keyframes noise-flash {
+            0% { opacity: 0.15; }
+            50% { opacity: 0; }
+            100% { opacity: 0.08; }
+        }
+        
+        .trigger-flash {
+            animation: noise-flash 0.25s linear;
         }
 
         .image-loading-text {
             position: absolute;
-            font-size: 0.7rem;
-            color: #444;
-            letter-spacing: 5px;
-            animation: blink 1s infinite;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.75rem;
+            color: var(--endfield-orange);
+            letter-spacing: 6px;
+            z-index: 1;
+            animation: blink 1.5s infinite;
         }
 
-        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body class="scanline-overlay">
@@ -152,82 +216,90 @@
     <div class="corner-bracket bottom-left"></div>
     <div class="corner-bracket bottom-right"></div>
 
-    <div id="mainContent" class="flex flex-col justify-center items-center h-full text-center z-10 px-4">
-        <div class="brand-logo uppercase tracking-[5px] opacity-80 mb-2">Arknights: Endfield</div>
-        <h1 class="text-3xl font-bold mb-8">明日方舟：終末地</h1>
+    <!-- 主頁面 -->
+    <div id="mainContent" class="flex flex-col justify-center items-center h-full text-center z-10 px-4 transition-all duration-1000">
+        <div class="brand-logo uppercase tracking-[10px] opacity-50 text-[11px] mb-3">Arknights: Endfield // Protocol 722</div>
+        <h1 class="text-5xl font-bold mb-10 tracking-tighter">明日方舟：終末地</h1>
         
-        <div class="system-alert mb-8">
-            <span class="inline-block bg-[#ff5f00] text-black px-2 py-0.5 text-[10px] font-bold mr-3">CRITICAL</span>
-            <span class="tracking-widest text-sm">系統連線異常 - 數據重新導向中</span>
+        <div class="system-alert mb-12">
+            <span class="inline-block bg-[#ff5f00] text-black px-2 py-0.5 text-[10px] font-bold mr-4">CRITICAL ERROR</span>
+            <span class="tracking-[4px] text-sm font-bold uppercase">System Connectivity Fragmented - Attempting Restoration</span>
         </div>
 
-        <div class="text-xs text-zinc-500 uppercase tracking-widest mb-2">Estimated Recovery Time</div>
-        <div class="countdown-container mb-10" id="countdown">00:09:59</div>
+        <div class="text-[11px] text-zinc-500 uppercase tracking-[6px] mb-3">Time Remaining Until Reconstruction</div>
+        <div class="countdown-container mb-14" id="countdown">00:09:59:00</div>
         
-        <div class="space-y-4">
+        <div class="space-y-6">
             <button class="action-btn" onclick="toggleModal(true)">
-                <span class="relative z-10">ACCESS PERSONNEL DATA // 人員檔案</span>
+                <span class="relative z-10">Access Personnel Files // 人員檔案存取</span>
             </button>
-            <div class="text-[10px] text-zinc-600 tracking-tighter">PERMISSION LEVEL: ADMINISTRATOR</div>
+            <div class="text-[10px] text-zinc-700 tracking-[3px] uppercase">Encryption Layer: 0x88F2A - Administrator Privilege Required</div>
         </div>
     </div>
 
+    <!-- 人員檔案資料庫 -->
     <div id="dataModal">
-        <div class="max-w-6xl mx-auto h-full flex flex-col">
-            <div class="flex justify-between items-end border-b border-zinc-800 pb-4 mb-8">
+        <div class="max-w-7xl mx-auto h-full flex flex-col p-10 md:p-14 modal-container">
+            <!-- 標題裝飾 -->
+            <div class="flex justify-between items-end border-b border-zinc-800 pb-8 mb-12">
                 <div>
-                    <h2 class="text-2xl font-bold tracking-tighter">PERSONNEL DATABASE</h2>
-                    <p class="text-[10px] text-zinc-500">ENDREASON PROTOCOL / TALOS-II SECTOR</p>
+                    <h2 class="text-4xl font-bold tracking-tighter">PERSONNEL DATABASE</h2>
+                    <p class="text-[11px] text-zinc-500 mt-2 uppercase tracking-[4px]">Data Stream: Talos-II Core // User: Admin_01</p>
                 </div>
-                <button onclick="toggleModal(false)" class="text-zinc-500 hover:text-white text-xs tracking-widest border border-zinc-700 px-4 py-1">
-                    CLOSE [ESC]
+                <button onclick="toggleModal(false)" class="text-zinc-500 hover:text-white text-[11px] tracking-widest border border-zinc-800 px-8 py-3 transition-all uppercase">
+                    Exit_Session [ESC]
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 flex-grow">
-                <!-- 角色圖片展示區 -->
-                <div class="char-image-container group">
-                    <div class="image-loading-text">LOADING ASSETS...</div>
-                    <!-- 這裡是圖片標籤，src 會由 JS 動態更改 -->
-                    <img id="charImage" src="" alt="Character Art" onerror="this.style.opacity='0'">
+            <!-- 主展示區 -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-14 flex-grow overflow-hidden">
+                <!-- 角色大圖 (佔 7 欄) -->
+                <div class="lg:col-span-7 char-image-container rounded-sm shadow-2xl">
+                    <div class="glitch-overlay" id="glitchFlash"></div>
+                    <div class="image-loading-text uppercase" id="loadText">Syncing Asset Data...</div>
+                    <img id="charImage" src="" alt="Character Portrait">
                     
-                    <div class="absolute bottom-4 left-4">
-                        <div class="text-5xl font-bold text-white opacity-10" id="charId">EF-01</div>
+                    <!-- 背景 ID 裝飾 -->
+                    <div class="absolute bottom-8 left-10">
+                        <div class="text-8xl font-bold text-white opacity-5 tracking-tighter select-none" id="charIdDisplay">EF-01</div>
                     </div>
                 </div>
 
-                <!-- 數據資料 -->
-                <div class="space-y-6">
-                    <div>
-                        <div class="text-orange-500 text-xs font-bold mb-1 tracking-widest" id="charRole">管理員 / ADMINISTRATOR</div>
-                        <h3 class="text-4xl font-bold" id="charName">佩里卡 (Perlica)</h3>
-                        <div class="w-12 h-1 bg-orange-500 mt-2"></div>
+                <!-- 資料與技能 (佔 5 欄) -->
+                <div class="lg:col-span-5 flex flex-col justify-center space-y-10">
+                    <div id="charHeader" class="transition-all duration-500">
+                        <div class="text-orange-500 text-xs font-bold mb-3 tracking-[6px] uppercase" id="charRole">Administrator</div>
+                        <h3 class="text-6xl font-bold tracking-tight" id="charName">佩里卡 (Perlica)</h3>
+                        <div class="w-20 h-1 bg-orange-500 mt-5"></div>
                     </div>
 
-                    <div class="bg-zinc-900 p-4 border border-zinc-800">
-                        <div class="text-[10px] text-zinc-500 mb-2 uppercase tracking-widest">Operation Skills / 戰術技能</div>
-                        <div id="skillList"></div>
+                    <div class="space-y-5">
+                        <div class="text-[11px] text-zinc-500 uppercase tracking-[5px] border-l-2 border-zinc-800 pl-5">Tactical Deployment Skills</div>
+                        <div id="skillList" class="min-h-[320px]">
+                            <!-- JS 動態生成 -->
+                        </div>
                     </div>
 
-                    <div class="flex gap-4">
-                        <button class="flex-1 border border-zinc-700 py-2 hover:bg-white hover:text-black transition text-xs" onclick="changeChar(-1)">PREV</button>
-                        <button class="flex-1 border border-zinc-700 py-2 hover:bg-white hover:text-black transition text-xs" onclick="changeChar(1)">NEXT</button>
+                    <!-- 導覽按鈕 -->
+                    <div class="flex gap-5 pt-6">
+                        <button class="flex-1 bg-zinc-900/50 border border-zinc-800 py-4 text-[11px] tracking-widest hover:bg-white hover:text-black transition-all font-bold" onclick="changeChar(-1)">PREV_DATA_NODE</button>
+                        <button class="flex-1 bg-zinc-900/50 border border-zinc-800 py-4 text-[11px] tracking-widest hover:bg-white hover:text-black transition-all font-bold" onclick="changeChar(1)">NEXT_DATA_NODE</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="log-container absolute bottom-5 left-5 w-1/4 h-32 overflow-hidden text-[10px] text-zinc-600 border-t border-zinc-900 pt-2" id="logBox"></div>
+    <!-- 底部實時日誌 -->
+    <div class="log-container absolute bottom-8 left-10 w-1/4 h-28 overflow-hidden text-[10px] text-zinc-700 border-t border-zinc-900 pt-4 opacity-40 select-none" id="logBox"></div>
 
     <script>
-        // --- 核心修改處：在 image 欄位填入您的圖片路徑 ---
+        // 角色資料集
         const characters = [
             {
                 id: "EF-01",
                 name: "佩里卡 (Perlica)",
                 role: "管理員 / ADMINISTRATOR",
-                // 請在此處更改圖片路徑，例如: "images/perlica.png" 或 網址
                 image: "images/Perlica.png", 
                 skills: [
                     { name: "戰術協調", desc: "提升全隊攻擊速度 15%，持續 10 秒。" },
@@ -260,64 +332,133 @@
         ];
 
         let currentCharIndex = 0;
-        let totalSeconds = 600;
+        let totalSeconds = 600; // 10分鐘
 
-        function updateCountdown() {
+        // 精準倒計時邏輯 (每秒更新一次時間)
+        function updateTime() {
+            if (totalSeconds > 0) {
+                totalSeconds--;
+            } else {
+                totalSeconds = 600; // 重置循環
+            }
+        }
+
+        // 渲染倒計時 (包含快速跳動的微秒)
+        function renderCountdown() {
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
-            const ms = Math.floor(Math.random() * 99);
-            document.getElementById('countdown').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
-            if (totalSeconds > 0) totalSeconds--;
-            else totalSeconds = 600;
+            const ms = Math.floor(Math.random() * 99); // 模擬高頻運算，僅作視覺效果
+            
+            document.getElementById('countdown').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
         }
 
+        // 彈窗控制
         function toggleModal(show) {
-            document.getElementById('dataModal').style.display = show ? 'block' : 'none';
-            if(show) renderCharacter();
+            const modal = document.getElementById('dataModal');
+            const main = document.getElementById('mainContent');
+            
+            if (show) {
+                modal.style.display = 'block';
+                setTimeout(() => {
+                    modal.classList.add('active');
+                    main.style.filter = 'blur(15px) grayscale(0.5) scale(0.96)';
+                    renderCharacter();
+                }, 20);
+            } else {
+                modal.classList.remove('active');
+                main.style.filter = 'none';
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 600);
+            }
         }
 
+        // 切換角色與動畫處理
         function changeChar(direction) {
-            currentCharIndex = (currentCharIndex + direction + characters.length) % characters.length;
-            renderCharacter();
+            const flash = document.getElementById('glitchFlash');
+            flash.classList.remove('trigger-flash');
+            void flash.offsetWidth; // 強制重繪以重啟動畫
+            flash.classList.add('trigger-flash');
+
+            const img = document.getElementById('charImage');
+            img.classList.remove('visible');
+
+            setTimeout(() => {
+                currentCharIndex = (currentCharIndex + direction + characters.length) % characters.length;
+                renderCharacter();
+            }, 250);
         }
 
         function renderCharacter() {
             const char = characters[currentCharIndex];
+            const img = document.getElementById('charImage');
+            const loadText = document.getElementById('loadText');
             
-            // 更新文字資訊
-            document.getElementById('charId').textContent = char.id;
+            document.getElementById('charIdDisplay').textContent = char.id;
             document.getElementById('charName').textContent = char.name;
             document.getElementById('charRole').textContent = char.role;
             
-            // --- 核心修改處：更新圖片路徑 ---
-            const imgElement = document.getElementById('charImage');
-            imgElement.style.opacity = '0'; // 切換時先隱藏，做個簡單的轉場
-            imgElement.src = char.image;
-            imgElement.onload = () => imgElement.style.opacity = '1';
+            loadText.style.display = 'block';
+            img.src = char.image;
+            img.onload = () => {
+                img.classList.add('visible');
+                loadText.style.display = 'none';
+            };
 
             const skillList = document.getElementById('skillList');
             skillList.innerHTML = '';
-            char.skills.forEach(skill => {
+            char.skills.forEach((skill, index) => {
                 const div = document.createElement('div');
                 div.className = 'skill-node';
-                div.innerHTML = `<div class="font-bold text-sm text-white">${skill.name}</div><div class="text-[10px] text-zinc-500">${skill.desc}</div>`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="font-bold text-sm text-white uppercase tracking-tighter">${skill.name}</div>
+                        <div class="text-[9px] text-orange-500 border border-orange-500/40 px-2 py-0.5">AUTH_RESTRICTED</div>
+                    </div>
+                    <div class="text-[11px] text-zinc-500 leading-relaxed">${skill.desc}</div>
+                `;
                 skillList.appendChild(div);
+                
+                // 逐條滑入效果
+                setTimeout(() => div.classList.add('show'), index * 120 + 350);
             });
         }
 
-        const logBox = document.getElementById('logBox');
+        // 背景日誌生成器
         function addLog() {
-            const messages = ["Accessing encrypted file...", "Personnel DB link: ACTIVE", "Sector Talos-II data sync...", "Babel protocol v3.2", "Authority verified."];
+            const messages = [
+                "RE-ROUTING POWER TO SECTOR 7...",
+                "NEURAL LINK SYNCING: 98.4% STABILITY.",
+                "PERSONNEL FILE DECRYPTED SUCCESSFULLY.",
+                "TALOS-II ATMOSPHERE: STABLE AT 1.02 ATM.",
+                "ALERT: ANOMALY DETECTED IN SECTOR 04.",
+                "CONNECTION SECURE: ENDFIELD PROTOCOL ACTIVE.",
+                "CORE TEMPERATURE: NOMINAL."
+            ];
+            const logBox = document.getElementById('logBox');
             const log = document.createElement('div');
-            log.innerHTML = `<span style="color: #ff5f00;">[LOG]</span> ${messages[Math.floor(Math.random() * messages.length)]}`;
+            log.className = 'mb-2 flex gap-2';
+            log.innerHTML = `<span class="text-orange-500 font-bold">[SYS]</span> <span>${messages[Math.floor(Math.random() * messages.length)]}</span>`;
             logBox.appendChild(log);
-            if (logBox.childNodes.length > 5) logBox.removeChild(logBox.firstChild);
+            if (logBox.childNodes.length > 6) logBox.removeChild(logBox.firstChild);
+            logBox.scrollTop = logBox.scrollHeight;
         }
 
-        setInterval(updateCountdown, 100);
-        setInterval(addLog, 3000);
-        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleModal(false); });
-        for(let i=0; i<3; i++) addLog();
+        // 定時器設置
+        setInterval(updateTime, 1000);        // 每 1 秒減少一次時間
+        setInterval(renderCountdown, 80);      // 每 80ms 刷新一次顯示 (為了毫秒動畫)
+        setInterval(addLog, 4500);             // 每 4.5 秒產生一條日誌
+
+        // 鍵盤支持
+        window.addEventListener('keydown', (e) => { 
+            if (e.key === 'Escape') toggleModal(false);
+            if (e.key === 'ArrowRight') changeChar(1);
+            if (e.key === 'ArrowLeft') changeChar(-1);
+        });
+
+        // 預載日誌
+        for(let i=0; i<4; i++) addLog();
     </script>
 </body>
 </html>
