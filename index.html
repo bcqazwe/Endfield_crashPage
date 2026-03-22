@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TERMINAL - SYSTEM RECOVERY & DATABASE</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Three.js 用於 3D 模擬 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -27,15 +26,11 @@
             margin: 0;
         }
 
-        /* 背景掃描線與干擾效果 */
         .scanline-overlay::before {
             content: " ";
             display: block;
             position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
+            top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
                         linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
             z-index: 50;
@@ -50,10 +45,7 @@
             animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
         .countdown-container {
             font-size: clamp(3rem, 10vw, 6rem);
@@ -62,6 +54,24 @@
             text-shadow: 0 0 30px rgba(255, 95, 0, 0.5);
             letter-spacing: -2px;
             font-variant-numeric: tabular-nums;
+        }
+
+        /* 動態進度條樣式 */
+        .progress-track {
+            width: 100%;
+            max-width: 600px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            margin-top: 10px;
+        }
+        .progress-thumb {
+            position: absolute;
+            height: 100%;
+            background: var(--endfield-orange);
+            width: 0%;
+            transition: width 1s linear;
+            box-shadow: 0 0 10px var(--endfield-orange);
         }
 
         .corner-bracket {
@@ -84,7 +94,7 @@
             border: 1px solid var(--endfield-orange);
             color: var(--endfield-orange);
             padding: 14px 40px;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             letter-spacing: 4px;
             transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
             cursor: pointer;
@@ -102,10 +112,7 @@
         #dataModal, #vesselModal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: 100;
             background: var(--modal-bg);
             backdrop-filter: blur(20px);
@@ -113,27 +120,16 @@
             transition: opacity 0.6s ease;
         }
 
-        .modal-active {
-            display: block !important;
-            opacity: 1 !important;
-        }
+        .modal-active { display: block !important; opacity: 1 !important; }
 
         .modal-container {
             transform: scale(1.1) translateY(20px);
             transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
-        .modal-active .modal-container {
-            transform: scale(1) translateY(0);
-        }
+        .modal-active .modal-container { transform: scale(1) translateY(0); }
 
-        /* 3D 畫布容器 */
-        #three-container {
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, #111 0%, #000 100%);
-            cursor: grab;
-        }
+        #three-container { width: 100%; height: 100%; background: radial-gradient(circle at center, #111 0%, #000 100%); cursor: grab; }
         #three-container:active { cursor: grabbing; }
 
         .char-image-container {
@@ -160,10 +156,7 @@
             pointer-events: none;
         }
 
-        #charImage.visible {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-        }
+        #charImage.visible { opacity: 1; transform: translateX(0) scale(1); }
 
         .skill-node {
             background: #111;
@@ -175,12 +168,8 @@
             transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
-        .skill-node.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .skill-node.show { opacity: 1; transform: translateY(0); }
 
-        /* BGM 控制器樣式 */
         .audio-control {
             position: fixed;
             bottom: 40px;
@@ -194,22 +183,74 @@
             transition: opacity 0.3s;
         }
         .audio-control:hover { opacity: 1; }
-        .wave-bar {
-            width: 2px;
-            height: 12px;
-            background: var(--endfield-orange);
-            animation: wave 1s infinite ease-in-out;
-        }
+        .wave-bar { width: 2px; height: 12px; background: var(--endfield-orange); animation: wave 1s infinite ease-in-out; }
         .wave-bar:nth-child(2) { animation-delay: 0.2s; }
         .wave-bar:nth-child(3) { animation-delay: 0.4s; }
         .audio-off .wave-bar { animation: none; height: 2px; background: #444; }
 
         @keyframes wave { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+
+        /* 跑馬燈樣式 */
+        .ticker-wrap {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(255, 95, 0, 0.05);
+            border-top: 1px solid rgba(255, 95, 0, 0.2);
+            padding: 5px 0;
+            z-index: 10;
+        }
+        .ticker {
+            display: inline-block;
+            white-space: nowrap;
+            padding-right: 100%;
+            animation: ticker 30s linear infinite;
+            font-size: 10px;
+            color: var(--endfield-orange);
+            opacity: 0.7;
+            letter-spacing: 2px;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
+        /* 世界觀情報框 */
+        .lore-box {
+            position: fixed;
+            top: 100px;
+            right: 40px;
+            width: 250px;
+            text-align: right;
+            border-right: 2px solid var(--endfield-orange);
+            padding-right: 20px;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+        .lore-box:hover { opacity: 1; }
+
+        /* 社群媒體 */
+        .social-bar {
+            position: fixed;
+            top: 40px;
+            right: 100px;
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+        .social-icon {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: #555;
+            transition: color 0.3s;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+        .social-icon:hover { color: var(--endfield-orange); }
     </style>
 </head>
 <body class="scanline-overlay">
 
-    <!-- 音訊標籤 -->
     <audio id="audio-bgm" loop></audio>
     <audio id="audio-click"></audio>
     <audio id="audio-transition"></audio>
@@ -219,6 +260,21 @@
     <div class="corner-bracket top-right"></div>
     <div class="corner-bracket bottom-left"></div>
     <div class="corner-bracket bottom-right"></div>
+
+    <!-- 社群媒體 -->
+    <div class="social-bar">
+        <a href="#" class="social-icon">Twitter</a>
+        <a href="#" class="social-icon">Discord</a>
+        <a href="#" class="social-icon">Official Site</a>
+    </div>
+
+    <!-- 世界觀情報 -->
+    <div class="lore-box">
+        <div class="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">World Intelligence // 世界情報</div>
+        <div id="lore-content" class="text-xs leading-loose text-zinc-300">
+            正在檢索塔羅斯II號的地理數據...
+        </div>
+    </div>
 
     <!-- BGM 控制器 -->
     <div class="audio-control" id="bgmToggle" onclick="toggleBGM()">
@@ -241,7 +297,11 @@
         </div>
 
         <div class="text-[11px] text-zinc-500 uppercase tracking-[6px] mb-3">Time Remaining Until Reconstruction</div>
-        <div class="countdown-container mb-14" id="countdown">00:09:59:00</div>
+        <div class="countdown-container" id="countdown">00:09:59:00</div>
+        
+        <div class="progress-track mb-14">
+            <div class="progress-thumb" id="repair-progress"></div>
+        </div>
         
         <div class="flex flex-col md:flex-row gap-6">
             <button class="action-btn" onclick="toggleModal('dataModal', true)">
@@ -253,7 +313,14 @@
         </div>
     </div>
 
-    <!-- 人員檔案資料庫 -->
+    <!-- 底部跑馬燈 -->
+    <div class="ticker-wrap">
+        <div class="ticker">
+            SYSTEM NOTIFICATION: SECTOR 04 REHABILITATION IN PROGRESS... PLEASE STAY WITHIN THE AUTHORIZED ZONES... ALL PERSONNEL ARE ADVISED TO CHECK NEURAL LINK STABILITY... ENDREASON PROTOCOL ACTIVATED...
+        </div>
+    </div>
+
+    <!-- 人員檔案資料庫 (保持原有邏輯) -->
     <div id="dataModal">
         <div class="max-w-7xl mx-auto h-full flex flex-col p-10 md:p-14 modal-container">
             <div class="flex justify-between items-end border-b border-zinc-800 pb-8 mb-12">
@@ -265,7 +332,6 @@
                     Exit_Session [ESC]
                 </button>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-14 flex-grow overflow-hidden">
                 <div class="lg:col-span-7 char-image-container rounded-sm shadow-2xl">
                     <img id="charImage" src="" alt="Character Portrait">
@@ -273,7 +339,6 @@
                         <div class="text-8xl font-bold text-white opacity-5 tracking-tighter select-none" id="charIdDisplay">EF-01</div>
                     </div>
                 </div>
-
                 <div class="lg:col-span-5 flex flex-col justify-center space-y-10">
                     <div id="charHeader">
                         <div class="text-orange-500 text-xs font-bold mb-3 tracking-[6px] uppercase" id="charRole">Administrator</div>
@@ -302,10 +367,8 @@
                     Exit_Session [ESC]
                 </button>
             </div>
-            
             <div class="relative flex-grow bg-black border border-zinc-800 rounded-sm overflow-hidden">
                 <div id="three-container"></div>
-                <!-- 覆蓋層 UI -->
                 <div class="absolute top-6 left-6 pointer-events-none">
                     <div class="bg-orange-500 text-black text-[10px] font-bold px-2 py-1 mb-1">SCANNING_CORE...</div>
                     <div class="text-white text-[10px] opacity-40 uppercase tracking-widest">Model: Land-Vessel // Alpha 01</div>
@@ -318,28 +381,29 @@
         </div>
     </div>
 
-    <div class="log-container absolute bottom-8 left-10 w-1/4 h-28 overflow-hidden text-[10px] text-zinc-700 border-t border-zinc-900 pt-4 opacity-40 select-none" id="logBox"></div>
+    <div class="log-container absolute bottom-12 left-10 w-1/4 h-28 overflow-hidden text-[10px] text-zinc-700 border-t border-zinc-900 pt-4 opacity-40 select-none" id="logBox"></div>
 
     <script>
-        /**
-         * 音訊配置
-         */
-        const AUDIO_PATHS = {
-            bgm: "musics/Login.mp3",          
-            click: "musics/button.mp3",      
-            transition: "musics/button.mp3", 
-            alert: "musics/Alarm.mp3"       
-        };
-
+        const AUDIO_PATHS = { bgm: "musics/Login.mp3", click: "musics/button.mp3", transition: "musics/button.mp3", alert: "audio/alert.mp3" };
         const characters = [
             { id: "EF-01", name: "佩里卡 (Perlica)", role: "管理員 / ADMINISTRATOR", image: "images/Perlica.png", skills: [{ name: "戰術協調", desc: "提升全隊攻擊速度 15%。" }, { name: "終末指令", desc: "釋放能量衝擊。" }] },
             { id: "EF-02", name: "陳千語 (Chen Qianyu)", role: "戰術人員 / VANGUARD", image: "images/Qianyu.png", skills: [{ name: "斬擊強化", desc: "傷害提升並擊退。" }, { name: "劍氣縱橫", desc: "多段切割傷害。" }] },
             { id: "EF-00", name: "管理員 (Endministrator)", role: "主角 / PROTAGONIST", image: "images/Endmin.png", skills: [{ name: "源石共鳴", desc: "恢復友方生命值。" }, { name: "系統接入", desc: "解鎖高級武器協議。" }] }
         ];
 
+        // 世界觀情報庫
+        const LORE_LIST = [
+            "塔羅斯II號是一顆環境惡劣的星球，開拓者們必須依賴移動基地進行生存。",
+            "『終末地工業』是目前星球上最大的技術輸出方，負責管理多個能源協議。",
+            "帝江號不僅是移動基地，更是開拓者們的精神堡壘。",
+            "源石技術的穩定性是維持防禦場運行的核心條件。",
+            "在荒野中，通訊延遲是常有的事，請務必攜帶備用數據單元。"
+        ];
+
         let currentCharIndex = 0;
-        let totalSeconds = 600;
-        let isBGMPlaying = true; // 預設為意圖開啟
+        let totalSeconds = 600; 
+        const INITIAL_SECONDS = 600;
+        let isBGMPlaying = true;
 
         const bgm = document.getElementById('audio-bgm');
         const sfxClick = document.getElementById('audio-click');
@@ -351,47 +415,23 @@
         sfxTransition.src = AUDIO_PATHS.transition;
         sfxAlert.src = AUDIO_PATHS.alert;
 
-        // 監聽第一次互動以啟動預設開啟的音樂
-        window.addEventListener('click', () => {
-            if (isBGMPlaying && bgm.paused) {
-                bgm.play().catch(() => {});
-            }
-        }, { once: true });
+        window.addEventListener('click', () => { if (isBGMPlaying && bgm.paused) bgm.play().catch(()=>{}); }, { once: true });
 
-        function playSFX(audioElement) {
-            audioElement.currentTime = 0;
-            audioElement.play().catch(() => {});
-        }
+        function playSFX(audioElement) { audioElement.currentTime = 0; audioElement.play().catch(()=>{}); }
 
         function toggleBGM() {
             const toggleBtn = document.getElementById('bgmToggle');
             const statusText = document.getElementById('bgmStatus');
-            if (bgm.paused) {
-                bgm.play();
-                isBGMPlaying = true;
-                toggleBtn.classList.remove('audio-off');
-                statusText.textContent = "Audio Online";
-            } else {
-                bgm.pause();
-                isBGMPlaying = false;
-                toggleBtn.classList.add('audio-off');
-                statusText.textContent = "Audio Offline";
-            }
+            if (bgm.paused) { bgm.play(); isBGMPlaying = true; toggleBtn.classList.remove('audio-off'); statusText.textContent = "Audio Online"; }
+            else { bgm.pause(); isBGMPlaying = false; toggleBtn.classList.add('audio-off'); statusText.textContent = "Audio Offline"; }
         }
 
         function toggleModal(modalId, show) {
             const modal = document.getElementById(modalId);
             const main = document.getElementById('mainContent');
             playSFX(sfxTransition);
-            if (show) {
-                modal.classList.add('modal-active');
-                main.style.filter = 'blur(15px) grayscale(0.5) scale(0.96)';
-                if (modalId === 'dataModal') renderCharacter();
-                if (modalId === 'vesselModal') initThree();
-            } else {
-                modal.classList.remove('modal-active');
-                main.style.filter = 'none';
-            }
+            if (show) { modal.classList.add('modal-active'); main.style.filter = 'blur(15px) grayscale(0.5) scale(0.96)'; if (modalId === 'dataModal') renderCharacter(); if (modalId === 'vesselModal') initThree(); }
+            else { modal.classList.remove('modal-active'); main.style.filter = 'none'; }
         }
 
         function changeChar(direction) {
@@ -420,14 +460,34 @@
             });
         }
 
-        // 倒計時
-        setInterval(() => { if (totalSeconds > 0) totalSeconds--; else totalSeconds = 600; }, 1000);
+        // 倒計時與進度條邏輯
+        setInterval(() => { 
+            if (totalSeconds > 0) totalSeconds--; 
+            else totalSeconds = INITIAL_SECONDS;
+            
+            // 更新進度條
+            const progress = ((INITIAL_SECONDS - totalSeconds) / INITIAL_SECONDS) * 100;
+            document.getElementById('repair-progress').style.width = progress + "%";
+        }, 1000);
+
         setInterval(() => {
             const m = Math.floor(totalSeconds / 60);
             const s = totalSeconds % 60;
             const ms = Math.floor(Math.random() * 99);
             document.getElementById('countdown').textContent = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}:${ms.toString().padStart(2,'0')}`;
         }, 80);
+
+        // 世界觀情報輪播
+        let loreIndex = 0;
+        setInterval(() => {
+            const content = document.getElementById('lore-content');
+            content.style.opacity = 0;
+            setTimeout(() => {
+                loreIndex = (loreIndex + 1) % LORE_LIST.length;
+                content.textContent = LORE_LIST[loreIndex];
+                content.style.opacity = 1;
+            }, 500);
+        }, 8000);
 
         // --- THREE.JS 3D 邏輯 ---
         let scene, camera, renderer, ship;
@@ -449,60 +509,48 @@
             renderer.setSize(container.clientWidth, container.clientHeight);
             container.appendChild(renderer.domElement);
 
-            // 燈光
             const ambient = new THREE.AmbientLight(0xffffff, 0.4);
             scene.add(ambient);
             const point = new THREE.PointLight(0xff5f00, 1.5);
             point.position.set(10, 10, 10);
             scene.add(point);
 
-            // 構建帝江號 (簡約幾何風格)
             ship = new THREE.Group();
             const hullMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
             const detailMat = new THREE.MeshPhongMaterial({ color: 0xff5f00, emissive: 0xff5f00, emissiveIntensity: 0.5 });
-
             const hull = new THREE.Mesh(new THREE.BoxGeometry(10, 1.5, 4), hullMat);
             const bridge = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), hullMat);
-            bridge.position.y = 1.2;
-            bridge.position.z = -1;
-            
-            const wingL = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 5), hullMat);
-            wingL.position.x = -6;
-            const wingR = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 5), hullMat);
-            wingR.position.x = 6;
-
-            const lightStrip = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.1, 0.1), detailMat);
-            lightStrip.position.y = 0.5;
-            lightStrip.position.z = 2;
-
+            bridge.position.y = 1.2; bridge.position.z = -1;
+            const wingL = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 5), hullMat); wingL.position.x = -6;
+            const wingR = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 5), hullMat); wingR.position.x = 6;
+            const lightStrip = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.1, 0.1), detailMat); lightStrip.position.y = 0.5; lightStrip.position.z = 2;
             ship.add(hull, bridge, wingL, wingR, lightStrip);
             scene.add(ship);
 
-            // 滑鼠交互
             container.addEventListener('mousedown', (e) => { isDragging = true; previousMouseX = e.clientX; });
             window.addEventListener('mouseup', () => { isDragging = false; });
-            window.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    const deltaX = e.clientX - previousMouseX;
-                    targetRotationY += deltaX * 0.01;
-                    previousMouseX = e.clientX;
-                }
-            });
-
+            window.addEventListener('mousemove', (e) => { if (isDragging) { const deltaX = e.clientX - previousMouseX; targetRotationY += deltaX * 0.01; previousMouseX = e.clientX; } });
             animate();
             isThreeInited = true;
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            // 平滑旋轉
-            currentRotationY += (targetRotationY - currentRotationY) * 0.1;
-            ship.rotation.y = currentRotationY;
-            ship.position.y = Math.sin(Date.now() * 0.001) * 0.2; // 漂浮效果
-            renderer.render(scene, camera);
-        }
+        function animate() { requestAnimationFrame(animate); currentRotationY += (targetRotationY - currentRotationY) * 0.1; ship.rotation.y = currentRotationY; ship.position.y = Math.sin(Date.now() * 0.001) * 0.2; renderer.render(scene, camera); }
 
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { toggleModal('dataModal', false); toggleModal('vesselModal', false); } });
+
+        // 背景日誌
+        function addLog() {
+            const messages = ["RE-ROUTING POWER...", "SYNCING NEURAL LINK...", "FILE DECRYPTED.", "ATMOSPHERE: STABLE.", "CONNECTION SECURE."];
+            const logBox = document.getElementById('logBox');
+            const log = document.createElement('div');
+            log.className = 'mb-1';
+            log.innerHTML = `<span class="text-orange-500 font-bold">[SYS]</span> ${messages[Math.floor(Math.random() * messages.length)]}`;
+            logBox.appendChild(log);
+            if (logBox.childNodes.length > 5) logBox.removeChild(logBox.firstChild);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+        setInterval(addLog, 4500);
+        for(let i=0; i<4; i++) addLog();
     </script>
 </body>
 </html>
