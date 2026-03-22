@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL - SYSTEM RECOVERY</title>
+    <title>TERMINAL - SYSTEM RECOVERY & DATABASE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -13,6 +13,7 @@
             --endfield-bg: #0a0a0a;
             --endfield-gray: #1a1a1a;
             --endfield-text-dim: #888888;
+            --modal-bg: rgba(10, 10, 10, 0.95);
         }
 
         body {
@@ -22,14 +23,10 @@
             overflow: hidden;
             height: 100vh;
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
 
         /* 背景掃描線效果 */
-        body::before {
+        .scanline-overlay::before {
             content: " ";
             display: block;
             position: absolute;
@@ -38,30 +35,15 @@
             bottom: 0;
             right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 2;
+            z-index: 50;
             background-size: 100% 2px, 3px 100%;
             pointer-events: none;
-        }
-
-        .glitch-text {
-            position: relative;
-            display: inline-block;
-        }
-
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
         }
 
         .system-alert {
             border-left: 4px solid var(--endfield-orange);
             background: rgba(255, 95, 0, 0.1);
             padding: 10px 20px;
-            margin-bottom: 2rem;
             animation: pulse 2s infinite;
         }
 
@@ -78,34 +60,6 @@
             letter-spacing: -2px;
         }
 
-        .progress-bar {
-            width: 300px;
-            height: 4px;
-            background: var(--endfield-gray);
-            position: relative;
-            margin-top: 1rem;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--endfield-orange);
-            width: 45%;
-            transition: width 1s linear;
-        }
-
-        .log-container {
-            position: absolute;
-            bottom: 5%;
-            left: 5%;
-            width: 30%;
-            height: 150px;
-            font-size: 0.75rem;
-            color: var(--endfield-text-dim);
-            overflow: hidden;
-            border-top: 1px solid #333;
-            padding-top: 10px;
-        }
-
         .corner-bracket {
             position: absolute;
             width: 20px;
@@ -119,145 +73,251 @@
         .bottom-left { bottom: 40px; left: 40px; border-width: 0 0 2px 2px; }
         .bottom-right { bottom: 40px; right: 40px; border-width: 0 2px 2px 0; }
 
-        .brand-logo {
-            font-size: 1.2rem;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-            color: white;
-            opacity: 0.9;
+        /* 按鈕樣式 */
+        .action-btn {
+            background: transparent;
+            border: 1px solid var(--endfield-orange);
+            color: var(--endfield-orange);
+            padding: 8px 24px;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
         }
 
-        .status-badge {
-            display: inline-block;
+        .action-btn:hover {
             background: var(--endfield-orange);
             color: black;
-            padding: 2px 8px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            vertical-align: middle;
-            margin-right: 10px;
+            box-shadow: 0 0 15px var(--endfield-orange);
         }
+
+        /* 檔案彈窗 */
+        #dataModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            background: var(--modal-bg);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .skill-node {
+            background: #1a1a1a;
+            border-left: 2px solid var(--endfield-orange);
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* 角色圖片容器優化 */
+        .char-image-container {
+            position: relative;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
+            border: 1px solid #333;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #charImage {
+            max-height: 90%;
+            max-width: 90%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(255, 95, 0, 0.2));
+            transition: opacity 0.5s ease;
+        }
+
+        .image-loading-text {
+            position: absolute;
+            font-size: 0.7rem;
+            color: #444;
+            letter-spacing: 5px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
     </style>
 </head>
-<body>
+<body class="scanline-overlay">
 
-    <!-- 裝飾邊框 -->
     <div class="corner-bracket top-left"></div>
     <div class="corner-bracket top-right"></div>
     <div class="corner-bracket bottom-left"></div>
     <div class="corner-bracket bottom-right"></div>
 
-    <!-- 主要內容 -->
-    <div class="text-center z-10">
-        <div class="brand-logo">ARKNIGHTS : ENDFIELD</div>
+    <div id="mainContent" class="flex flex-col justify-center items-center h-full text-center z-10 px-4">
+        <div class="brand-logo uppercase tracking-[5px] opacity-80 mb-2">Arknights: Endfield</div>
         <h1 class="text-3xl font-bold mb-8">明日方舟：終末地</h1>
         
-        <div class="system-alert">
-            <span class="status-badge">CRITICAL</span>
-            <span class="tracking-widest">系統連線異常 - 正在重新導向協定</span>
+        <div class="system-alert mb-8">
+            <span class="inline-block bg-[#ff5f00] text-black px-2 py-0.5 text-[10px] font-bold mr-3">CRITICAL</span>
+            <span class="tracking-widest text-sm">系統連線異常 - 數據重新導向中</span>
         </div>
 
-        <div class="text-sm text-dim uppercase tracking-widest mb-2" style="color: var(--endfield-text-dim);">Estimated Recovery Time</div>
-        <div class="countdown-container" id="countdown">00:09:59</div>
+        <div class="text-xs text-zinc-500 uppercase tracking-widest mb-2">Estimated Recovery Time</div>
+        <div class="countdown-container mb-10" id="countdown">00:09:59</div>
         
-        <div class="flex flex-col items-center mt-4">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="text-[10px] mt-2 tracking-tighter text-dim" id="progressText">SYNCING CORE DATA... 45.2%</div>
+        <div class="space-y-4">
+            <button class="action-btn" onclick="toggleModal(true)">
+                <span class="relative z-10">ACCESS PERSONNEL DATA // 人員檔案</span>
+            </button>
+            <div class="text-[10px] text-zinc-600 tracking-tighter">PERMISSION LEVEL: ADMINISTRATOR</div>
         </div>
     </div>
 
-    <!-- 側邊技術裝飾 -->
-    <div class="absolute right-[5%] top-[20%] text-right opacity-30 select-none">
-        <div class="text-xs mb-1">NODE_ID: EF-092-B</div>
-        <div class="text-xs mb-1">SECTOR: TALOS-II</div>
-        <div class="text-xs">PROTOCOL: 0x445F</div>
+    <div id="dataModal">
+        <div class="max-w-6xl mx-auto h-full flex flex-col">
+            <div class="flex justify-between items-end border-b border-zinc-800 pb-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tighter">PERSONNEL DATABASE</h2>
+                    <p class="text-[10px] text-zinc-500">ENDREASON PROTOCOL / TALOS-II SECTOR</p>
+                </div>
+                <button onclick="toggleModal(false)" class="text-zinc-500 hover:text-white text-xs tracking-widest border border-zinc-700 px-4 py-1">
+                    CLOSE [ESC]
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 flex-grow">
+                <!-- 角色圖片展示區 -->
+                <div class="char-image-container group">
+                    <div class="image-loading-text">LOADING ASSETS...</div>
+                    <!-- 這裡是圖片標籤，src 會由 JS 動態更改 -->
+                    <img id="charImage" src="" alt="Character Art" onerror="this.style.opacity='0'">
+                    
+                    <div class="absolute bottom-4 left-4">
+                        <div class="text-5xl font-bold text-white opacity-10" id="charId">EF-01</div>
+                    </div>
+                </div>
+
+                <!-- 數據資料 -->
+                <div class="space-y-6">
+                    <div>
+                        <div class="text-orange-500 text-xs font-bold mb-1 tracking-widest" id="charRole">管理員 / ADMINISTRATOR</div>
+                        <h3 class="text-4xl font-bold" id="charName">佩里卡 (Perlica)</h3>
+                        <div class="w-12 h-1 bg-orange-500 mt-2"></div>
+                    </div>
+
+                    <div class="bg-zinc-900 p-4 border border-zinc-800">
+                        <div class="text-[10px] text-zinc-500 mb-2 uppercase tracking-widest">Operation Skills / 戰術技能</div>
+                        <div id="skillList"></div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button class="flex-1 border border-zinc-700 py-2 hover:bg-white hover:text-black transition text-xs" onclick="changeChar(-1)">PREV</button>
+                        <button class="flex-1 border border-zinc-700 py-2 hover:bg-white hover:text-black transition text-xs" onclick="changeChar(1)">NEXT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 技術日誌流 -->
-    <div class="log-container" id="logBox">
-        <!-- JS 會在此處生成日誌 -->
-    </div>
-
-    <!-- 底部資訊 -->
-    <div class="absolute bottom-10 right-10 text-[10px] text-zinc-600 tracking-widest">
-        SYSTEM RECOVERY MODULE v2.5.0-PROTOTYPE
-    </div>
+    <div class="log-container absolute bottom-5 left-5 w-1/4 h-32 overflow-hidden text-[10px] text-zinc-600 border-t border-zinc-900 pt-2" id="logBox"></div>
 
     <script>
-        // 倒計時邏輯 (設定 10 分鐘)
+        // --- 核心修改處：在 image 欄位填入您的圖片路徑 ---
+        const characters = [
+            {
+                id: "EF-01",
+                name: "佩里卡 (Perlica)",
+                role: "管理員 / ADMINISTRATOR",
+                // 請在此處更改圖片路徑，例如: "images/perlica.png" 或 網址
+                image: "https://api.placeholder.com/400/600?text=Perlica+Art", 
+                skills: [
+                    { name: "戰術協調", desc: "提升全隊攻擊速度 15%，持續 10 秒。" },
+                    { name: "終末指令", desc: "釋放能量衝擊，對範圍內敵人造成大量物理傷害。" },
+                    { name: "數據鏈接", desc: "被動：提高附近隊友的暴擊率。" }
+                ]
+            },
+            {
+                id: "EF-02",
+                name: "陳千語 (Chen Qianyu)",
+                role: "戰術人員 / VANGUARD",
+                image: "https://api.placeholder.com/400/600?text=Chen+Art",
+                skills: [
+                    { name: "斬擊強化", desc: "下次攻擊造成 200% 的傷害並擊退敵人。" },
+                    { name: "劍氣縱橫", desc: "對直線路徑上的敵人造成多段切割傷害。" },
+                    { name: "近戰大師", desc: "被動：閃避成功後暫時提升自身防禦力。" }
+                ]
+            },
+            {
+                id: "EF-00",
+                name: "管理員 (Endministrator)",
+                role: "終末地執行官 / PROTAGONIST",
+                image: "https://api.placeholder.com/400/600?text=Admin+Art",
+                skills: [
+                    { name: "源石共鳴", desc: "消耗能量開啟全場增益，恢復友方生命值。" },
+                    { name: "時空定格", desc: "使範圍內敵人動作減緩 80%。" },
+                    { name: "系統接入", desc: "解鎖高級武器協議，無視敵方 30% 防禦。" }
+                ]
+            }
+        ];
+
+        let currentCharIndex = 0;
         let totalSeconds = 600;
-        const countdownElement = document.getElementById('countdown');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
 
         function updateCountdown() {
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
-            
-            countdownElement.textContent = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${(Math.floor(Math.random() * 99)).toString().padStart(2, '0')}`;
-            
-            // 更新進度條
-            const percent = ((600 - totalSeconds) / 600) * 100;
-            progressFill.style.width = `${40 + (percent * 0.6)}%`;
-            progressText.textContent = `RECALIBRATING NEURAL LINK... ${(40 + (percent * 0.6)).toFixed(1)}%`;
-
-            if (totalSeconds > 0) {
-                totalSeconds--;
-            } else {
-                totalSeconds = 600; // 循環模擬
-            }
+            const ms = Math.floor(Math.random() * 99);
+            document.getElementById('countdown').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
+            if (totalSeconds > 0) totalSeconds--;
+            else totalSeconds = 600;
         }
 
-        // 隨機日誌生成
+        function toggleModal(show) {
+            document.getElementById('dataModal').style.display = show ? 'block' : 'none';
+            if(show) renderCharacter();
+        }
+
+        function changeChar(direction) {
+            currentCharIndex = (currentCharIndex + direction + characters.length) % characters.length;
+            renderCharacter();
+        }
+
+        function renderCharacter() {
+            const char = characters[currentCharIndex];
+            
+            // 更新文字資訊
+            document.getElementById('charId').textContent = char.id;
+            document.getElementById('charName').textContent = char.name;
+            document.getElementById('charRole').textContent = char.role;
+            
+            // --- 核心修改處：更新圖片路徑 ---
+            const imgElement = document.getElementById('charImage');
+            imgElement.style.opacity = '0'; // 切換時先隱藏，做個簡單的轉場
+            imgElement.src = char.image;
+            imgElement.onload = () => imgElement.style.opacity = '1';
+
+            const skillList = document.getElementById('skillList');
+            skillList.innerHTML = '';
+            char.skills.forEach(skill => {
+                const div = document.createElement('div');
+                div.className = 'skill-node';
+                div.innerHTML = `<div class="font-bold text-sm text-white">${skill.name}</div><div class="text-[10px] text-zinc-500">${skill.desc}</div>`;
+                skillList.appendChild(div);
+            });
+        }
+
         const logBox = document.getElementById('logBox');
-        const logMessages = [
-            "Initializing connection to Talos-II central hub...",
-            "Checking local authority levels...",
-            "Warning: Anomaly detected in sector 04.",
-            "Syncing protocol 0x889A: SUCCESS.",
-            "Retrieving administrator privileges...",
-            "Encryption layer established.",
-            "Data fragment recovery: 88% complete.",
-            "Re-routing emergency power to core...",
-            "Awaiting response from Endfield Industries...",
-            "Connection failed. Retrying in 500ms...",
-            "Memory buffer cleared.",
-            "Sanity check: PASSED.",
-            "Babel system online."
-        ];
-
         function addLog() {
+            const messages = ["Accessing encrypted file...", "Personnel DB link: ACTIVE", "Sector Talos-II data sync...", "Babel protocol v3.2", "Authority verified."];
             const log = document.createElement('div');
-            log.className = 'mb-1';
-            const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            log.innerHTML = `<span style="color: #ff5f00;">[${timestamp}]</span> ${logMessages[Math.floor(Math.random() * logMessages.length)]}`;
+            log.innerHTML = `<span style="color: #ff5f00;">[LOG]</span> ${messages[Math.floor(Math.random() * messages.length)]}`;
             logBox.appendChild(log);
-            
-            if (logBox.childNodes.length > 8) {
-                logBox.removeChild(logBox.firstChild);
-            }
-            logBox.scrollTop = logBox.scrollHeight;
+            if (logBox.childNodes.length > 5) logBox.removeChild(logBox.firstChild);
         }
 
-        // 定時器
-        setInterval(updateCountdown, 100); // 為了呈現毫秒跳動感使用較快頻率
-        setInterval(addLog, 2000);
-
-        // 初始化
-        updateCountdown();
-        for(let i=0; i<5; i++) addLog();
-
-        // 隨機故障閃爍效果
-        setInterval(() => {
-            if (Math.random() > 0.95) {
-                document.body.style.opacity = "0.8";
-                setTimeout(() => document.body.style.opacity = "1", 50);
-            }
-        }, 500);
+        setInterval(updateCountdown, 100);
+        setInterval(addLog, 3000);
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleModal(false); });
+        for(let i=0; i<3; i++) addLog();
     </script>
 </body>
 </html>
