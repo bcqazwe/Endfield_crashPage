@@ -41,7 +41,6 @@
             pointer-events: none;
         }
 
-        /* 系統警示脈動 */
         .system-alert {
             border-left: 4px solid var(--endfield-orange);
             background: rgba(255, 95, 0, 0.1);
@@ -78,7 +77,6 @@
         .bottom-left { bottom: 40px; left: 40px; border-width: 0 0 2px 2px; }
         .bottom-right { bottom: 40px; right: 40px; border-width: 0 2px 2px 0; }
 
-        /* 行動按鈕 */
         .action-btn {
             background: transparent;
             border: 1px solid var(--endfield-orange);
@@ -99,7 +97,6 @@
             transform: translateY(-3px);
         }
 
-        /* 檔案彈窗 */
         #dataModal {
             display: none;
             position: fixed;
@@ -128,7 +125,6 @@
             transform: scale(1) translateY(0);
         }
 
-        /* 角色大圖展示區 */
         .char-image-container {
             position: relative;
             background: radial-gradient(circle at 50% 40%, #1a1a1a 0%, #050505 100%);
@@ -142,7 +138,7 @@
         }
 
         #charImage {
-            height: 115%; /* 放大至合適大小 */
+            height: 115%;
             width: auto;
             max-width: none;
             object-fit: contain;
@@ -158,7 +154,6 @@
             transform: translateX(0) scale(1);
         }
 
-        /* 技能節點動畫 */
         .skill-node {
             background: #111;
             border-left: 4px solid var(--endfield-orange);
@@ -174,7 +169,6 @@
             transform: translateY(0);
         }
 
-        /* 切換瞬間的視覺干擾 */
         .glitch-overlay {
             position: absolute;
             inset: 0;
@@ -194,27 +188,55 @@
             animation: noise-flash 0.25s linear;
         }
 
-        .image-loading-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 0.75rem;
-            color: var(--endfield-orange);
-            letter-spacing: 6px;
-            z-index: 1;
-            animation: blink 1.5s infinite;
+        /* BGM 控制器樣式 */
+        .audio-control {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s;
         }
+        .audio-control:hover { opacity: 1; }
+        .wave-bar {
+            width: 2px;
+            height: 12px;
+            background: var(--endfield-orange);
+            animation: wave 1s infinite ease-in-out;
+        }
+        .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+        .audio-off .wave-bar { animation: none; height: 2px; background: #444; }
 
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes wave { 0%, 100% { height: 4px; } 50% { height: 16px; } }
     </style>
 </head>
 <body class="scanline-overlay">
+
+    <!-- 音訊標籤 -->
+    <audio id="audio-bgm" loop></audio>
+    <audio id="audio-click"></audio>
+    <audio id="audio-transition"></audio>
+    <audio id="audio-alert"></audio>
 
     <div class="corner-bracket top-left"></div>
     <div class="corner-bracket top-right"></div>
     <div class="corner-bracket bottom-left"></div>
     <div class="corner-bracket bottom-right"></div>
+
+    <!-- BGM 控制器 -->
+    <div class="audio-control audio-off" id="bgmToggle" onclick="toggleBGM()">
+        <div class="flex items-end gap-[2px] h-4">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+        </div>
+        <span class="text-[10px] tracking-widest text-zinc-500 uppercase font-bold" id="bgmStatus">Audio Offline</span>
+    </div>
 
     <!-- 主頁面 -->
     <div id="mainContent" class="flex flex-col justify-center items-center h-full text-center z-10 px-4 transition-all duration-1000">
@@ -240,7 +262,6 @@
     <!-- 人員檔案資料庫 -->
     <div id="dataModal">
         <div class="max-w-7xl mx-auto h-full flex flex-col p-10 md:p-14 modal-container">
-            <!-- 標題裝飾 -->
             <div class="flex justify-between items-end border-b border-zinc-800 pb-8 mb-12">
                 <div>
                     <h2 class="text-4xl font-bold tracking-tighter">PERSONNEL DATABASE</h2>
@@ -251,21 +272,17 @@
                 </button>
             </div>
 
-            <!-- 主展示區 -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-14 flex-grow overflow-hidden">
-                <!-- 角色大圖 (佔 7 欄) -->
                 <div class="lg:col-span-7 char-image-container rounded-sm shadow-2xl">
                     <div class="glitch-overlay" id="glitchFlash"></div>
                     <div class="image-loading-text uppercase" id="loadText">Syncing Asset Data...</div>
                     <img id="charImage" src="" alt="Character Portrait">
                     
-                    <!-- 背景 ID 裝飾 -->
                     <div class="absolute bottom-8 left-10">
                         <div class="text-8xl font-bold text-white opacity-5 tracking-tighter select-none" id="charIdDisplay">EF-01</div>
                     </div>
                 </div>
 
-                <!-- 資料與技能 (佔 5 欄) -->
                 <div class="lg:col-span-5 flex flex-col justify-center space-y-10">
                     <div id="charHeader" class="transition-all duration-500">
                         <div class="text-orange-500 text-xs font-bold mb-3 tracking-[6px] uppercase" id="charRole">Administrator</div>
@@ -275,12 +292,9 @@
 
                     <div class="space-y-5">
                         <div class="text-[11px] text-zinc-500 uppercase tracking-[5px] border-l-2 border-zinc-800 pl-5">Tactical Deployment Skills</div>
-                        <div id="skillList" class="min-h-[320px]">
-                            <!-- JS 動態生成 -->
-                        </div>
+                        <div id="skillList" class="min-h-[320px]"></div>
                     </div>
 
-                    <!-- 導覽按鈕 -->
                     <div class="flex gap-5 pt-6">
                         <button class="flex-1 bg-zinc-900/50 border border-zinc-800 py-4 text-[11px] tracking-widest hover:bg-white hover:text-black transition-all font-bold" onclick="changeChar(-1)">PREV_DATA_NODE</button>
                         <button class="flex-1 bg-zinc-900/50 border border-zinc-800 py-4 text-[11px] tracking-widest hover:bg-white hover:text-black transition-all font-bold" onclick="changeChar(1)">NEXT_DATA_NODE</button>
@@ -290,11 +304,19 @@
         </div>
     </div>
 
-    <!-- 底部實時日誌 -->
     <div class="log-container absolute bottom-8 left-10 w-1/4 h-28 overflow-hidden text-[10px] text-zinc-700 border-t border-zinc-900 pt-4 opacity-40 select-none" id="logBox"></div>
 
     <script>
-        // 角色資料集
+        /**
+         * 音訊路徑配置 (請在此修改您的檔案路徑)
+         */
+        const AUDIO_PATHS = {
+            bgm: "musics/Login.mp3",          // 背景音樂
+            click: "musics/button.mp3",      // 通用點擊音效
+            transition: "musics/button.mp3", // 畫面切換/彈窗音效
+            alert: "audio/alert.mp3"       // 系統警告音效
+        };
+
         const characters = [
             {
                 id: "EF-01",
@@ -332,32 +354,62 @@
         ];
 
         let currentCharIndex = 0;
-        let totalSeconds = 600; // 10分鐘
+        let totalSeconds = 600;
+        let isBGMPlaying = false;
 
-        // 精準倒計時邏輯 (每秒更新一次時間)
-        function updateTime() {
-            if (totalSeconds > 0) {
-                totalSeconds--;
+        // 初始化音軌
+        const bgm = document.getElementById('audio-bgm');
+        const sfxClick = document.getElementById('audio-click');
+        const sfxTransition = document.getElementById('audio-transition');
+        const sfxAlert = document.getElementById('audio-alert');
+
+        bgm.src = AUDIO_PATHS.bgm;
+        sfxClick.src = AUDIO_PATHS.click;
+        sfxTransition.src = AUDIO_PATHS.transition;
+        sfxAlert.src = AUDIO_PATHS.alert;
+
+        function playSFX(audioElement) {
+            audioElement.currentTime = 0;
+            audioElement.play().catch(() => {}); // 捕捉可能的瀏覽器限制錯誤
+        }
+
+        function toggleBGM() {
+            const toggleBtn = document.getElementById('bgmToggle');
+            const statusText = document.getElementById('bgmStatus');
+
+            if (!isBGMPlaying) {
+                bgm.play().then(() => {
+                    isBGMPlaying = true;
+                    toggleBtn.classList.remove('audio-off');
+                    statusText.textContent = "Audio Online";
+                }).catch(e => console.error("Audio Playback Blocked"));
             } else {
-                totalSeconds = 600; // 重置循環
+                bgm.pause();
+                isBGMPlaying = false;
+                toggleBtn.classList.add('audio-off');
+                statusText.textContent = "Audio Offline";
             }
         }
 
-        // 渲染倒計時 (包含快速跳動的微秒)
+        function updateTime() {
+            if (totalSeconds > 0) totalSeconds--;
+            else totalSeconds = 600;
+        }
+
         function renderCountdown() {
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
-            const ms = Math.floor(Math.random() * 99); // 模擬高頻運算，僅作視覺效果
-            
+            const ms = Math.floor(Math.random() * 99);
             document.getElementById('countdown').textContent = 
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
         }
 
-        // 彈窗控制
         function toggleModal(show) {
             const modal = document.getElementById('dataModal');
             const main = document.getElementById('mainContent');
             
+            playSFX(sfxTransition); // 彈窗開關音效
+
             if (show) {
                 modal.style.display = 'block';
                 setTimeout(() => {
@@ -368,17 +420,16 @@
             } else {
                 modal.classList.remove('active');
                 main.style.filter = 'none';
-                setTimeout(() => {
-                    modal.style.display = 'none';
-                }, 600);
+                setTimeout(() => modal.style.display = 'none', 600);
             }
         }
 
-        // 切換角色與動畫處理
         function changeChar(direction) {
+            playSFX(sfxClick); // 按鈕點擊音效
+
             const flash = document.getElementById('glitchFlash');
             flash.classList.remove('trigger-flash');
-            void flash.offsetWidth; // 強制重繪以重啟動畫
+            void flash.offsetWidth;
             flash.classList.add('trigger-flash');
 
             const img = document.getElementById('charImage');
@@ -419,13 +470,10 @@
                     <div class="text-[11px] text-zinc-500 leading-relaxed">${skill.desc}</div>
                 `;
                 skillList.appendChild(div);
-                
-                // 逐條滑入效果
                 setTimeout(() => div.classList.add('show'), index * 120 + 350);
             });
         }
 
-        // 背景日誌生成器
         function addLog() {
             const messages = [
                 "RE-ROUTING POWER TO SECTOR 7...",
@@ -445,19 +493,22 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // 定時器設置
-        setInterval(updateTime, 1000);        // 每 1 秒減少一次時間
-        setInterval(renderCountdown, 80);      // 每 80ms 刷新一次顯示 (為了毫秒動畫)
-        setInterval(addLog, 4500);             // 每 4.5 秒產生一條日誌
+        // 初始化與事件監聽
+        setInterval(updateTime, 1000);
+        setInterval(renderCountdown, 80);
+        setInterval(addLog, 4500);
 
-        // 鍵盤支持
         window.addEventListener('keydown', (e) => { 
             if (e.key === 'Escape') toggleModal(false);
             if (e.key === 'ArrowRight') changeChar(1);
             if (e.key === 'ArrowLeft') changeChar(-1);
         });
 
-        // 預載日誌
+        // 啟動提示音
+        setTimeout(() => {
+            playSFX(sfxAlert);
+        }, 1500);
+
         for(let i=0; i<4; i++) addLog();
     </script>
 </body>
